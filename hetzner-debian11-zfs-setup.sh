@@ -23,24 +23,24 @@ v_bpool_tweaks=
 v_rpool_name=
 v_rpool_tweaks=
 declare -a v_selected_disks
-v_swap_size=                 # integer
-v_free_tail_space=           # integer
-v_hostname=
-v_kernel_variant=
-v_zfs_arc_max_mb=
+v_swap_size=32                 # integer
+v_free_tail_space=0           # integer
+v_hostname=debs
+v_kernel_variant="-lts"
+v_zfs_arc_max_mb=1024
 v_root_password=
-v_encrypt_rpool=             # 0=false, 1=true
+v_encrypt_rpool=1
 v_passphrase=
 v_zfs_experimental=
 v_suitable_disks=()
 
 # Constants
-c_deb_packages_repo=https://mirror.hetzner.com/debian/packages
-c_deb_security_repo=https://mirror.hetzner.com/debian/security
+c_deb_packages_repo=https://deb.debian.org/debian/packages
+c_deb_security_repo=https://deb.debian.org/debian/security
 
 c_default_zfs_arc_max_mb=250
 c_default_bpool_tweaks="-o ashift=12 -O compression=lz4"
-c_default_rpool_tweaks="-o ashift=12 -O acltype=posixacl -O compression=zstd-9 -O dnodesize=auto -O relatime=on -O xattr=sa -O normalization=formD"
+c_default_rpool_tweaks="-o ashift=12 -O acltype=posixacl -O compression=lz4 -O dnodesize=auto -O relatime=on -O xattr=sa -O normalization=formD"
 c_default_hostname=terem
 c_zfs_mount_dir=/mnt
 c_log_dir=$(dirname "$(mktemp)")/zfs-hetzner-vm
@@ -63,7 +63,7 @@ function print_step_info_header {
 # ${FUNCNAME[1]}"
 
   if [[ "${1:-}" != "" ]]; then
-    echo -n " $1" 
+    echo -n " $1"
   fi
 
 
@@ -144,7 +144,7 @@ function initial_load_debian_zed_cache {
 
   local success=0
 
-  if [[ ! -e /mnt/etc/zfs/zfs-list.cache/rpool ]] || [[ -e /mnt/etc/zfs/zfs-list.cache/rpool && (( $(find /mnt/etc/zfs/zfs-list.cache/rpool -type f -printf '%s' 2> /dev/null) == 0 )) ]]; then  
+  if [[ ! -e /mnt/etc/zfs/zfs-list.cache/rpool ]] || [[ -e /mnt/etc/zfs/zfs-list.cache/rpool && (( $(find /mnt/etc/zfs/zfs-list.cache/rpool -type f -printf '%s' 2> /dev/null) == 0 )) ]]; then
     chroot_execute "zfs set canmount=noauto rpool"
 
     SECONDS=0
@@ -434,7 +434,7 @@ function unmount_and_export_fs {
   zpools_exported=99
   echo "===========exporting zfs pools============="
   set +e
-  while (( zpools_exported == 99 )) && (( SECONDS++ <= 60 )); do    
+  while (( zpools_exported == 99 )) && (( SECONDS++ <= 60 )); do
     if zpool export -a 2> /dev/null; then
       zpools_exported=1
       echo "all zfs pools were succesfully exported"
@@ -599,7 +599,7 @@ if [[ $v_swap_size -gt 0 ]]; then
 fi
 
 echo "======= setting up initial system packages =========="
-debootstrap --arch=amd64 bullseye "$c_zfs_mount_dir" "$c_deb_packages_repo"
+debootstrap --arch=amd64 bullseye "$c_zfs_mount_dir"
 
 zfs set devices=off "$v_rpool_name"
 
